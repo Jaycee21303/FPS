@@ -7,14 +7,17 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="overlay">
-    <h1>CLICK TO PLAY</h1>
+  <div id="overlay" onclick="window.__START_GAME__()">
+    CLICK TO PLAY
   </div>
 
   <div id="hud">
     <div id="health">HP: 100</div>
+    <div id="ammo">AMMO: 30</div>
     <div id="level">LEVEL 1</div>
-    <div id="crosshair">+</div>
+    <div id="status"></div>
+    <div id="crosshair"></div>
+    <div id="hitmarker"></div>
   </div>
 
   <script type="module" src="main.js"></script>
