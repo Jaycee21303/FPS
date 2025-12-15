@@ -2,18 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FPS Prototype</title>
+  <title>Neon Field FPS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="overlay">
-    <h1>CLICK TO PLAY</h1>
+    <div class="panel">
+      <h1>NEON FIELD</h1>
+      <p id="overlay-subtitle">Click to start</p>
+      <ul>
+        <li>Move: WASD</li>
+        <li>Look: Mouse</li>
+        <li>Shoot: Left Click</li>
+        <li>Exit/Resume: ESC</li>
+      </ul>
+    </div>
   </div>
 
   <div id="hud">
     <div id="health">HP: 100</div>
     <div id="level">LEVEL 1</div>
+    <div id="status"></div>
     <div id="crosshair">+</div>
   </div>
 
