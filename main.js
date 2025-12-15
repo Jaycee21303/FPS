@@ -17,9 +17,9 @@ const player = {
   velocity: new THREE.Vector3(),
   speed: 12,
   health: 100,
-  ammo: 30,
-  magSize: 30,
-  reserve: 120
+  ammo: Infinity,
+  magSize: Infinity,
+  reserve: Infinity
 };
 const moveState = { forward: false, back: false, left: false, right: false };
 let lastShot = 0;
@@ -32,15 +32,12 @@ const hitmarkerUI = document.getElementById("hitmarker");
 // Expose the gesture-safe start entrypoint so the inline overlay handler can call it reliably.
 window.__START_GAME__ = startGame;
 
-// Expose the gesture-safe start entrypoint so the inline overlay handler can call it reliably.
-window.__START_GAME__ = startGame;
-
 init();
 animate();
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x101423);
+  scene.background = new THREE.Color(0x182134);
 
   camera = new THREE.PerspectiveCamera(
     75,
@@ -70,9 +67,9 @@ function init() {
 }
 
 function addLighting() {
-  const hemi = new THREE.HemisphereLight(0xb7d8ff, 0x1b2246, 0.85);
-  const ambient = new THREE.AmbientLight(0xdde7ff, 0.35);
-  const sun = new THREE.DirectionalLight(0xffe6c7, 1.35);
+  const hemi = new THREE.HemisphereLight(0xc3e1ff, 0x1b2246, 1.05);
+  const ambient = new THREE.AmbientLight(0xe9f2ff, 0.55);
+  const sun = new THREE.DirectionalLight(0xffe6c7, 1.55);
   sun.position.set(12, 18, 6);
   sun.castShadow = false;
 
@@ -80,7 +77,7 @@ function addLighting() {
   fill1.position.set(-14, 12, -10);
   const fill2 = new THREE.SpotLight(0xff9f6d, 0.9, 120, Math.PI / 5, 0.25, 1.1);
   fill2.position.set(16, 10, 8);
-  const flood = new THREE.PointLight(0x9ad6ff, 1.4, 45);
+  const flood = new THREE.PointLight(0x9ad6ff, 1.7, 50);
   flood.position.set(0, 6, -4);
 
   scene.add(hemi, ambient, sun, fill1, fill2, flood);
@@ -127,7 +124,8 @@ function addCover() {
 
 function addGun() {
   gun = new THREE.Group();
-  gun.position.set(0.38, -0.45, -0.9);
+  gun.position.set(0.12, -0.58, -0.9);
+  gun.scale.set(1.4, 1.4, 1.4);
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: 0x151b2f,
@@ -142,15 +140,15 @@ function addGun() {
     roughness: 0.25
   });
 
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.9), bodyMat);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 1.05), bodyMat);
   body.position.set(0, -0.08, 0);
-  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.32, 0.18), bodyMat);
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.36, 0.2), bodyMat);
   grip.position.set(0, -0.2, -0.15);
   grip.rotation.x = Math.PI / 10;
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.35, 14), accentMat);
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.42, 14), accentMat);
   barrel.rotation.z = Math.PI / 2;
   barrel.position.set(0, 0.01, 0.42);
-  const sight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.12), accentMat);
+  const sight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.16), accentMat);
   sight.position.set(0, 0.04, -0.08);
 
   muzzleFlash = new THREE.Mesh(
@@ -192,6 +190,7 @@ function enableControls() {
   // Bind gameplay input directly on the first trusted click to satisfy browser gesture rules.
   document.addEventListener("mousemove", onMouseMove);
   document.addEventListener("mousedown", shoot);
+  document.addEventListener("pointerdown", shoot);
 }
 
 function onMouseMove(event) {
@@ -317,25 +316,15 @@ function onKeyUp(event) {
 }
 
 function reload() {
-  const needed = player.magSize - player.ammo;
-  if (needed <= 0 || player.reserve <= 0) return;
-  const pulled = Math.min(needed, player.reserve);
-  player.reserve -= pulled;
-  player.ammo += pulled;
-  statusUI.textContent = "Reloaded";
+  statusUI.textContent = "Unlimited ammo ready";
   updateHUD();
 }
 
 function shoot() {
   if (!playing) return;
   const now = performance.now();
-  if (now - lastShot < 180) return;
-  if (player.ammo <= 0) {
-    statusUI.textContent = "Out of ammo - press SPACE";
-    return;
-  }
+  if (now - lastShot < 140) return;
   lastShot = now;
-  player.ammo -= 1;
   recoilVelocity += 0.065;
   gun.position.y = -0.48;
   muzzleFlash.visible = true;
@@ -450,7 +439,7 @@ function nextLevel() {
 
 function updateHUD() {
   healthUI.textContent = `HP: ${Math.max(0, Math.floor(player.health))}`;
-  ammoUI.textContent = `AMMO: ${player.ammo}/${player.reserve}`;
+  ammoUI.textContent = `AMMO: ∞`;
   levelUI.textContent = `LEVEL ${level}`;
 }
 
