@@ -32,6 +32,9 @@ const hitmarkerUI = document.getElementById("hitmarker");
 // Expose the gesture-safe start entrypoint so the inline overlay handler can call it reliably.
 window.__START_GAME__ = startGame;
 
+// Expose the gesture-safe start entrypoint so the inline overlay handler can call it reliably.
+window.__START_GAME__ = startGame;
+
 init();
 animate();
 
