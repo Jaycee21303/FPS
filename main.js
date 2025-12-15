@@ -1,10 +1,13 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-import { PointerLockControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/PointerLockControls.js";
 
-let scene, camera, renderer, controls, clock;
+let scene, camera, renderer, clock;
 let enemies = [];
 let level = 1;
 let playing = false;
+let controlsEnabled = false;
+let yaw = 0;
+let pitch = 0;
+let lastPointer = { x: null, y: null };
 const player = {
   velocity: new THREE.Vector3(),
   speed: 12,
@@ -12,12 +15,12 @@ const player = {
 };
 const moveState = { forward: false, back: false, left: false, right: false };
 let lastShot = 0;
-
-const overlay = document.getElementById("overlay");
-const overlaySubtitle = document.getElementById("overlay-subtitle");
 const healthUI = document.getElementById("health");
 const levelUI = document.getElementById("level");
 const statusUI = document.getElementById("status");
+
+// Expose the gesture-safe start entrypoint so the inline overlay handler can call it reliably.
+window.__START_GAME__ = startGame;
 
 init();
 animate();
@@ -45,21 +48,6 @@ function init() {
   addFloor();
   addCover();
 
-  controls = new PointerLockControls(camera, renderer.domElement);
-  controls.addEventListener("lock", () => {
-    overlay.classList.add("hidden");
-    overlaySubtitle.textContent = "Press ESC to pause";
-    statusUI.textContent = "Eliminate all drones";
-    playing = true;
-  });
-  controls.addEventListener("unlock", () => {
-    overlay.classList.remove("hidden");
-    overlaySubtitle.textContent = player.health <= 0 ? "Click to restart" : "Click to resume";
-    playing = false;
-  });
-
-  overlay.addEventListener("click", startGame);
-  document.addEventListener("mousedown", shoot);
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
   window.addEventListener("resize", onResize);
@@ -110,10 +98,48 @@ function addCover() {
 }
 
 function startGame() {
+  console.log("CLICK REGISTERED");
+  console.log("GAME STARTED");
+
   if (player.health <= 0) {
     resetGame();
   }
-  controls.lock();
+
+  const overlay = document.getElementById("overlay");
+  if (overlay) {
+    overlay.remove();
+  }
+
+  enableControls();
+  playing = true;
+}
+
+function enableControls() {
+  if (controlsEnabled) return;
+  controlsEnabled = true;
+
+  // Bind gameplay input directly on the first trusted click to satisfy browser gesture rules.
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mousedown", shoot);
+}
+
+function onMouseMove(event) {
+  let deltaX = event.movementX ?? event.mozMovementX ?? event.webkitMovementX;
+  let deltaY = event.movementY ?? event.mozMovementY ?? event.webkitMovementY;
+
+  if ((deltaX === undefined || deltaX === null) && lastPointer.x !== null) {
+    deltaX = event.clientX - lastPointer.x;
+    deltaY = event.clientY - lastPointer.y;
+  }
+
+  lastPointer = { x: event.clientX, y: event.clientY };
+
+  if (!playing) return;
+
+  yaw -= (deltaX || 0) * 0.0025;
+  pitch -= (deltaY || 0) * 0.0025;
+  pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch));
+  camera.rotation.set(pitch, yaw, 0, "YXZ");
 }
 
 function resetGame() {
@@ -240,11 +266,8 @@ function updatePlayer(delta) {
   player.velocity.x -= player.velocity.x * 9 * delta;
   player.velocity.z -= player.velocity.z * 9 * delta;
 
-  const direction = new THREE.Vector3();
-  controls.getDirection(direction);
-  direction.y = 0;
-  direction.normalize();
-
+  const facing = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, yaw, 0, "YXZ"));
+  const direction = facing.clone().setY(0).normalize();
   const right = new THREE.Vector3();
   right.crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
 
@@ -259,12 +282,11 @@ function updatePlayer(delta) {
     player.velocity.addScaledVector(move, player.speed * delta);
   }
 
-  controls.moveRight(player.velocity.x * delta);
-  controls.moveForward(player.velocity.z * delta);
+  camera.position.addScaledVector(player.velocity, delta);
 }
 
 function updateEnemies(delta) {
-  const playerPos = controls.getObject().position.clone();
+  const playerPos = camera.position.clone();
   playerPos.y = 1.0;
   let incomingDamage = 0;
 
@@ -298,12 +320,26 @@ function handleGameOver() {
   player.health = 0;
   updateHUD();
   statusUI.textContent = "You were overwhelmed";
-  overlaySubtitle.textContent = "Click to restart";
-  controls.unlock();
+  playing = false;
+  showOverlay("CLICK TO RESTART");
+}
+
+function showOverlay(message) {
+  let overlay = document.getElementById("overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "overlay";
+    overlay.setAttribute("onclick", "window.__START_GAME__()");
+    document.body.appendChild(overlay);
+  }
+
+  // Keep the CTA visible and clickable for restarts without blocking gameplay.
+  overlay.textContent = message || "CLICK TO PLAY";
 }
 
 function animate() {
   requestAnimationFrame(animate);
+  console.log("FRAME RUNNING");
   const delta = clock.getDelta();
 
   if (playing) {
