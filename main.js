@@ -16,19 +16,22 @@ let recoilVelocity = 0;
 let waveConfig = { total: 0, spawned: 0, spawning: false };
 const player = {
   velocity: new THREE.Vector3(),
-  speed: 12,
+  baseSpeed: 12,
+  currentSpeed: 12,
   health: 100,
   ammo: Infinity,
   magSize: Infinity,
   reserve: Infinity
 };
-const moveState = { forward: false, back: false, left: false, right: false };
+const moveState = { forward: false, back: false, left: false, right: false, sprint: false };
 let lastShot = 0;
 const healthUI = document.getElementById("health");
 const ammoUI = document.getElementById("ammo");
 const levelUI = document.getElementById("level");
 const statusUI = document.getElementById("status");
 const hitmarkerUI = document.getElementById("hitmarker");
+
+const lerp = (a, b, t) => a + (b - a) * t;
 
 // Expose the gesture-safe start entrypoint so the inline overlay handler can call it reliably.
 window.__START_GAME__ = startGame;
@@ -39,19 +42,20 @@ animate();
 function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87ceeb);
+  scene.fog = new THREE.Fog(0x87ceeb, 300, 1200);
 
   camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
-    1200
+    2000
   );
   camera.position.set(0, 1.6, 5);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.toneMappingExposure = 1.6;
+  renderer.toneMappingExposure = 1.7;
   document.body.appendChild(renderer.domElement);
 
   clock = new THREE.Clock();
@@ -72,53 +76,91 @@ function init() {
 }
 
 function addLighting() {
-  const ambient = new THREE.AmbientLight(0xffffff, 1.0);
-  const sun = new THREE.DirectionalLight(0xffffff, 2.0);
-  sun.position.set(50, 100, 20);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+
+  const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+  sun.position.set(200, 300, 100);
   sun.castShadow = false;
 
-  const bounce = new THREE.HemisphereLight(0xbfd9ff, 0xb7c7d9, 0.6);
+  const bounce = new THREE.HemisphereLight(0xbfd9ff, 0xb7c7d9, 0.45);
 
-  scene.add(ambient, sun, bounce);
+  scene.add(sun, bounce);
 }
 
 function addFloor() {
+  const terrain = new THREE.PlaneGeometry(800, 800, 120, 120);
+  terrain.rotateX(-Math.PI / 2);
+
+  const colorArray = [];
+  const baseColor = new THREE.Color(0x7ca46a);
+  for (let i = 0; i < terrain.attributes.position.count; i++) {
+    const variation = (Math.random() - 0.5) * 0.08;
+    const color = baseColor.clone().offsetHSL(0, variation * 0.6, variation);
+    colorArray.push(color.r, color.g, color.b);
+
+    // Gently undulate the ground for subtle elevation change.
+    const y = Math.sin(i * 0.15) * 0.3 + (Math.random() - 0.5) * 0.25;
+    terrain.attributes.position.setY(i, y);
+  }
+
+  terrain.setAttribute("color", new THREE.Float32BufferAttribute(colorArray, 3));
+  terrain.computeVertexNormals();
+
   const material = new THREE.MeshStandardMaterial({
-    color: 0xd8e0ea,
-    metalness: 0.12,
-    roughness: 0.85,
-    emissive: 0x9eb8d8,
-    emissiveIntensity: 0.08
+    vertexColors: true,
+    metalness: 0.05,
+    roughness: 0.95
   });
-  floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), material);
-  floor.rotation.x = -Math.PI / 2;
+
+  floor = new THREE.Mesh(terrain, material);
   floor.receiveShadow = true;
   scene.add(floor);
-
-  const grid = new THREE.GridHelper(170, 120, 0xaac7e8, 0x7ea2c9);
-  grid.material.opacity = 0.45;
-  grid.material.transparent = true;
-  scene.add(grid);
 }
 
 function addCover() {
   const group = new THREE.Group();
-  const geometry = new THREE.BoxGeometry(3.5, 2.4, 0.4);
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x38416a,
-    emissive: 0x0c1328,
-    metalness: 0.4,
-    roughness: 0.5,
-    envMapIntensity: 0.45
+
+  const darkConcrete = new THREE.MeshStandardMaterial({
+    color: 0x4b556b,
+    metalness: 0.25,
+    roughness: 0.65
   });
 
-  [-12, -6, 0, 6, 12].forEach((x, index) => {
-    const wall = new THREE.Mesh(geometry, material.clone());
-    wall.position.set(x, 1.2, -6 - (index % 2) * 4);
-    wall.rotation.y = index % 2 === 0 ? 0.3 : -0.25;
+  // Forward cover line with alternating angles for readable silhouettes.
+  [-18, -9, 0, 9, 18].forEach((x, index) => {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(5, 2.6, 0.6), darkConcrete.clone());
+    wall.position.set(x, 1.3, -14 - (index % 2) * 4);
+    wall.rotation.y = index % 2 === 0 ? 0.28 : -0.24;
     group.add(wall);
     coverPieces.push(wall);
   });
+
+  // Crates and ramps to mix elevation.
+  const crateMaterial = new THREE.MeshStandardMaterial({ color: 0x6d4f3a, roughness: 0.7 });
+  const rampMaterial = new THREE.MeshStandardMaterial({ color: 0x6e7687, roughness: 0.85 });
+
+  const crateStack = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.2, 2.2), crateMaterial);
+  crateStack.position.set(-6, 1.1, -4);
+  group.add(crateStack);
+  coverPieces.push(crateStack);
+
+  const crateStack2 = crateStack.clone();
+  crateStack2.position.set(8, 1.1, 3);
+  crateStack2.scale.set(1.2, 1.6, 1.2);
+  group.add(crateStack2);
+  coverPieces.push(crateStack2);
+
+  const ramp = new THREE.Mesh(new THREE.BoxGeometry(6, 0.6, 4), rampMaterial);
+  ramp.position.set(-14, 0.3, 6);
+  ramp.rotation.z = -0.25;
+  group.add(ramp);
+  coverPieces.push(ramp);
+
+  const berm = new THREE.Mesh(new THREE.BoxGeometry(12, 1.2, 2.2), rampMaterial.clone());
+  berm.position.set(14, 0.6, -2);
+  berm.rotation.y = 0.18;
+  group.add(berm);
+  coverPieces.push(berm);
 
   scene.add(group);
 }
@@ -126,42 +168,107 @@ function addCover() {
 function addScenery() {
   const details = new THREE.Group();
 
-  const crateMat = new THREE.MeshStandardMaterial({
-    color: 0x555555,
-    metalness: 0.35,
-    roughness: 0.6
-  });
-  const crate = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), crateMat);
-  crate.position.set(3, 1, -3);
+  // --- Foreground props for readable cover ---
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x7b828f, roughness: 0.9 });
+  const jerseyBarrier = new THREE.Mesh(new THREE.BoxGeometry(5, 1.4, 1.2), concrete);
+  jerseyBarrier.position.set(2, 0.7, 10);
+  details.add(jerseyBarrier);
 
-  const tallCrate = crate.clone();
-  tallCrate.scale.y = 1.5;
-  tallCrate.position.set(-4, 1.5, 2.5);
+  const radioTower = new THREE.Group();
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 14, 10), new THREE.MeshStandardMaterial({ color: 0x9aa6b6 }));
+  mast.position.y = 7;
+  const antenna = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.4, 14), new THREE.MeshStandardMaterial({ color: 0xe3e9f2 }));
+  antenna.position.set(0.6, 13.8, 0);
+  antenna.rotation.z = Math.PI / 12;
+  radioTower.add(mast, antenna);
+  radioTower.position.set(-22, 0, -12);
+  details.add(radioTower);
 
-  const barrierMat = new THREE.MeshStandardMaterial({ color: 0x6c7a89, metalness: 0.2, roughness: 0.7 });
-  const barrier = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, 0.6), barrierMat);
-  barrier.position.set(0, 0.6, -8);
-  barrier.rotation.y = 0.25;
+  // --- Midground playable structures ---
+  const midground = new THREE.Group();
+  const warehouse = new THREE.Mesh(new THREE.BoxGeometry(18, 8, 14), new THREE.MeshStandardMaterial({ color: 0x9ba3b5, roughness: 0.85 }));
+  warehouse.position.set(28, 4, -10);
+  midground.add(warehouse);
 
-  const rampMat = new THREE.MeshStandardMaterial({ color: 0x7e8fa3, metalness: 0.15, roughness: 0.8 });
-  const ramp = new THREE.Mesh(new THREE.BoxGeometry(4, 0.4, 3), rampMat);
-  ramp.position.set(-8, 0.2, -4);
-  ramp.rotation.z = -0.2;
+  const tower = new THREE.Mesh(new THREE.BoxGeometry(6, 16, 6), new THREE.MeshStandardMaterial({ color: 0x5b6373, roughness: 0.7 }));
+  tower.position.set(-28, 8, 14);
+  const catwalk = new THREE.Mesh(new THREE.BoxGeometry(16, 0.6, 3), new THREE.MeshStandardMaterial({ color: 0x6f7685, roughness: 0.8 }));
+  catwalk.position.set(-16, 8, 14);
+  midground.add(tower, catwalk);
 
-  const mast = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.15, 0.15, 6, 10),
-    new THREE.MeshStandardMaterial({ color: 0x9aa6b6, metalness: 0.55, roughness: 0.35 })
-  );
-  mast.position.set(9, 3, 6);
-  const dish = new THREE.Mesh(
-    new THREE.ConeGeometry(0.8, 1.6, 18),
-    new THREE.MeshStandardMaterial({ color: 0xe3e9f2, metalness: 0.25, roughness: 0.5 })
-  );
-  dish.position.set(9, 6, 6);
-  dish.rotation.x = Math.PI;
+  const wallSegment = new THREE.Mesh(new THREE.BoxGeometry(40, 3, 1), concrete.clone());
+  wallSegment.position.set(0, 1.5, -24);
+  wallSegment.rotation.y = 0.06;
+  midground.add(wallSegment);
 
-  details.add(crate, tallCrate, barrier, ramp, mast, dish);
-  scene.add(details);
+  // Raised platform for elevation play.
+  const platform = new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 10), new THREE.MeshStandardMaterial({ color: 0x838a96, roughness: 0.8 }));
+  platform.position.set(0, 2.4, 6);
+  const support1 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 2.4, 10), concrete.clone());
+  support1.position.set(3, 1.2, 3);
+  const support2 = support1.clone();
+  support2.position.set(-3, 1.2, -3);
+  midground.add(platform, support1, support2);
+  coverPieces.push(platform);
+  coverPieces.push(support1);
+  coverPieces.push(support2);
+
+  // --- Background skyline (non-colliding, static) ---
+  const skyline = new THREE.Group();
+  const addTower = (x, z, h, color) => {
+    const building = new THREE.Mesh(new THREE.BoxGeometry(10 + Math.random() * 6, h, 10 + Math.random() * 6), new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
+    building.position.set(x, h / 2, z);
+    skyline.add(building);
+  };
+  for (let i = 0; i < 14; i++) {
+    const x = -120 + Math.random() * 240;
+    const z = -260 - Math.random() * 140;
+    addTower(x, z, 30 + Math.random() * 40, 0xa4afc4);
+  }
+
+  const hills = new THREE.Group();
+  for (let i = 0; i < 8; i++) {
+    const radius = 60 + Math.random() * 40;
+    const hill = new THREE.Mesh(new THREE.ConeGeometry(radius, radius * 0.8, 8), new THREE.MeshStandardMaterial({ color: 0x9cb58a, roughness: 1 }));
+    hill.position.set(-200 + Math.random() * 400, radius * 0.4, 180 + Math.random() * 200);
+    hill.rotation.y = Math.random() * Math.PI;
+    hills.add(hill);
+  }
+
+  // Background trees as silhouettes.
+  const treeLine = new THREE.Group();
+  const createTree = () => {
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 4, 6), new THREE.MeshStandardMaterial({ color: 0x8a6a4e }));
+    const canopy = new THREE.Mesh(new THREE.ConeGeometry(3 + Math.random(), 7, 8), new THREE.MeshStandardMaterial({ color: 0x4d704b, roughness: 1 }));
+    canopy.position.y = 4.5;
+    const tree = new THREE.Group();
+    tree.add(trunk, canopy);
+    return tree;
+  };
+  for (let i = 0; i < 40; i++) {
+    const tree = createTree();
+    tree.position.set(-160 + Math.random() * 320, 0, -180 - Math.random() * 160);
+    treeLine.add(tree);
+  }
+
+  // Decorative midground trees near play area (low poly for performance).
+  for (let i = 0; i < 20; i++) {
+    const tree = createTree();
+    tree.position.set(-80 + Math.random() * 160, 0, -60 + Math.random() * 120);
+    if (Math.abs(tree.position.x) > 12 || Math.abs(tree.position.z) > 12) {
+      details.add(tree);
+    }
+  }
+
+  skyline.matrixAutoUpdate = false;
+  skyline.updateMatrixWorld(true);
+  hills.matrixAutoUpdate = false;
+  hills.updateMatrixWorld(true);
+  treeLine.matrixAutoUpdate = false;
+  treeLine.updateMatrixWorld(true);
+
+  details.add(midground);
+  scene.add(details, skyline, hills, treeLine);
 }
 
 function addGun() {
@@ -305,7 +412,7 @@ function scheduleSpawn() {
     return;
   }
 
-  const aliveLimit = Math.min(5, 3 + Math.floor(level / 2));
+  const aliveLimit = 5;
   if (enemies.length >= aliveLimit) {
     setTimeout(scheduleSpawn, 300);
     return;
@@ -367,7 +474,7 @@ function createRobot() {
   bot.add(torso, plating, head, visor, core, shoulder, legL, legR);
 
   const angle = Math.random() * Math.PI * 2;
-  const radius = 14 + Math.random() * 12;
+  const radius = 50 + Math.random() * 100;
   bot.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius * -1);
   bot.userData = {
     hp: 40 + level * 6,
@@ -402,6 +509,10 @@ function onKeyDown(event) {
     case "ArrowRight":
       moveState.right = true;
       break;
+    case "ShiftLeft":
+    case "ShiftRight":
+      moveState.sprint = true;
+      break;
     case "Space":
       reload();
       break;
@@ -425,6 +536,10 @@ function onKeyUp(event) {
     case "KeyD":
     case "ArrowRight":
       moveState.right = false;
+      break;
+    case "ShiftLeft":
+    case "ShiftRight":
+      moveState.sprint = false;
       break;
   }
 }
@@ -565,6 +680,13 @@ function updatePlayer(delta) {
   const right = new THREE.Vector3();
   right.crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
 
+  const targetMultiplier = moveState.sprint ? 1.7 : 1;
+  const targetSpeed = player.baseSpeed * targetMultiplier;
+  player.currentSpeed = lerp(player.currentSpeed, targetSpeed, Math.min(1, 6 * delta));
+  const targetFov = moveState.sprint ? 85 : 75;
+  camera.fov = lerp(camera.fov, targetFov, 0.1);
+  camera.updateProjectionMatrix();
+
   const move = new THREE.Vector3();
   if (moveState.forward) move.add(direction);
   if (moveState.back) move.sub(direction);
@@ -573,7 +695,7 @@ function updatePlayer(delta) {
 
   if (move.lengthSq() > 0) {
     move.normalize();
-    player.velocity.addScaledVector(move, player.speed * delta);
+    player.velocity.addScaledVector(move, player.currentSpeed * delta);
   }
 
   camera.position.addScaledVector(player.velocity, delta);
