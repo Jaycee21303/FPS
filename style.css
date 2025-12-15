@@ -32,34 +32,71 @@ canvas {
   pointer-events: none;
   color: white;
   z-index: 5;
-  font-weight: 600;
+  font-weight: 700;
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.08em;
 }
 
 #health {
   position: absolute;
-  bottom: 20px;
+  top: 18px;
   left: 20px;
+  font-size: 18px;
+  color: #7af7ff;
+}
+
+#ammo {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  font-size: 18px;
+  color: #ffda7a;
 }
 
 #level {
   position: absolute;
-  top: 20px;
+  top: 54px;
   left: 20px;
+  font-size: 16px;
+  color: #b5f5ff;
 }
 
 #status {
   position: absolute;
-  top: 20px;
+  top: 54px;
   right: 20px;
   color: #a6ffe8;
+  font-size: 14px;
 }
 
 #crosshair {
   position: absolute;
   top: 50%;
   left: 50%;
+  width: 18px;
+  height: 18px;
   transform: translate(-50%, -50%);
-  font-size: 24px;
-  opacity: 0.8;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+  opacity: 0.85;
+}
+
+#hitmarker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  opacity: 0;
+  border-left: 3px solid #ff3b3b;
+  border-right: 3px solid #ff3b3b;
+  border-top: 3px solid #ff3b3b;
+  border-bottom: 3px solid #ff3b3b;
+  transition: opacity 80ms ease-out;
+  pointer-events: none;
+}
+
+.show-hitmarker {
+  opacity: 1 !important;
 }
