@@ -431,6 +431,7 @@ function applyDamage(bot, point, normal) {
 
 function nextLevel() {
   level += 1;
+  player.reserve += 15;
   statusUI.textContent = "Wave cleared!";
   setTimeout(spawnWave, 500);
   updateHUD();
