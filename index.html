@@ -2,24 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FPS Prototype</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Gallery Shooter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="overlay" onclick="window.__START_GAME__()">
-    CLICK TO PLAY
-  </div>
+  <div class="page">
+    <header class="hud">
+      <div class="brand">
+        <div class="gem"></div>
+        <div>
+          <div class="title">NEON MIDWAY</div>
+          <div class="subtitle">Stationary Gallery Shooter</div>
+        </div>
+      </div>
+      <div class="score-panel">
+        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+        <div class="stat"><span>Streak</span><strong id="streak">x1</strong></div>
+        <div class="stat"><span>Wave</span><strong id="wave">1</strong></div>
+        <div class="stat ammo"><span>Ammo</span><strong id="ammo">∞</strong></div>
+      </div>
+      <button id="toggle-help" aria-label="Toggle instructions">?</button>
+    </header>
 
-  <div id="hud">
-    <div id="health">HP: 100</div>
-    <div id="ammo">AMMO: 30</div>
-    <div id="level">LEVEL 1</div>
-    <div id="status"></div>
-    <div id="crosshair"></div>
-    <div id="hitmarker"></div>
+    <main class="playfield">
+      <canvas id="game" aria-label="Arcade gallery shooter canvas"></canvas>
+      <div class="overlay" id="menu">
+        <div class="panel">
+          <h1>Neon Midway</h1>
+          <p>Welcome to a technicolor gallery! Targets parade by while you stay stationary. Click or tap to shoot everything worth points and avoid letting them leave.</p>
+          <ul>
+            <li>Move your aim with your mouse or finger.</li>
+            <li>Click/tap to shoot. Rapid fire is allowed.</li>
+            <li>Maintain your streak for bonus score.</li>
+            <li>Hit bonus targets for slow-mo and big points.</li>
+          </ul>
+          <button id="start">Start Playing</button>
+        </div>
+      </div>
+      <div class="overlay hidden" id="help">
+        <div class="panel small">
+          <h2>Controls</h2>
+          <p><strong>Mouse / Touch:</strong> aim. <strong>Click / Tap:</strong> fire.</p>
+          <p>Keep your streak alive to power up. Hitting glowing prisms slows time for a moment.</p>
+        </div>
+      </div>
+      <div class="overlay hidden" id="gameover">
+        <div class="panel">
+          <h1>Show Over</h1>
+          <p id="final-stats">You scored 0 points.</p>
+          <button id="restart">Play Again</button>
+        </div>
+      </div>
+    </main>
   </div>
-
-  <script type="module" src="main.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
