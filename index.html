@@ -1,64 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neon Gallery Shooter</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galactica Clone</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="page">
     <header class="hud">
-      <div class="brand">
-        <div class="gem"></div>
-        <div>
-          <div class="title">NEON MIDWAY</div>
-          <div class="subtitle">Stationary Gallery Shooter</div>
-        </div>
+      <div class="hud__left">
+        <div class="hud__label">Score</div>
+        <div id="score" class="hud__value">000000</div>
       </div>
-      <div class="score-panel">
-        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
-        <div class="stat"><span>Streak</span><strong id="streak">x1</strong></div>
-        <div class="stat"><span>Wave</span><strong id="wave">1</strong></div>
-        <div class="stat ammo"><span>Ammo</span><strong id="ammo">∞</strong></div>
+      <div class="hud__center">
+        <div class="hud__title">GALACTICA</div>
+        <div id="status" class="hud__status">Insert Coin / Press Enter</div>
       </div>
-      <button id="toggle-help" aria-label="Toggle instructions">?</button>
+      <div class="hud__right">
+        <div class="hud__label">Lives</div>
+        <div id="lives" class="hud__value">3</div>
+      </div>
     </header>
 
-    <main class="playfield">
-      <canvas id="game" aria-label="Arcade gallery shooter canvas"></canvas>
-      <div class="overlay" id="menu">
-        <div class="panel">
-          <h1>Neon Midway</h1>
-          <p>Welcome to a technicolor gallery! Targets parade by while you stay stationary. Click or tap to shoot everything worth points and avoid letting them leave.</p>
-          <ul>
-            <li>Move your aim with your mouse or finger.</li>
-            <li>Click/tap to shoot. Rapid fire is allowed.</li>
-            <li>Maintain your streak for bonus score.</li>
-            <li>Hit bonus targets for slow-mo and big points.</li>
-          </ul>
-          <button id="start">Start Playing</button>
-        </div>
-      </div>
-      <div class="overlay hidden" id="help">
-        <div class="panel small">
-          <h2>Controls</h2>
-          <p><strong>Mouse / Touch:</strong> aim. <strong>Click / Tap:</strong> fire.</p>
-          <p>Keep your streak alive to power up. Hitting glowing prisms slows time for a moment.</p>
-        </div>
-      </div>
-      <div class="overlay hidden" id="gameover">
-        <div class="panel">
-          <h1>Show Over</h1>
-          <p id="final-stats">You scored 0 points.</p>
-          <button id="restart">Play Again</button>
-        </div>
+    <main class="stage">
+      <canvas id="game" width="960" height="720" aria-label="Galactica game canvas"></canvas>
+      <div class="legend">
+        <div><span>Move:</span> Arrow keys / A-D</div>
+        <div><span>Fire:</span> Space</div>
+        <div><span>Pause:</span> P</div>
       </div>
     </main>
+
+    <footer class="footer">
+      <p>Built for GitHub Pages. No audio by default; toggle SFX in settings panel.</p>
+    </footer>
   </div>
+
+  <div class="panel" id="settingsPanel" hidden>
+    <h2>Settings</h2>
+    <label><input type="checkbox" id="toggleSfx" checked /> Sound FX</label>
+    <label><input type="checkbox" id="toggleParticles" checked /> Particles</label>
+    <label><input type="checkbox" id="toggleTrails" checked /> Motion Trails</label>
+    <label><input type="checkbox" id="toggleBloom" checked /> Bloom Glow</label>
+    <button id="closeSettings">Close</button>
+  </div>
+
+  <button id="settingsButton" class="settings">⚙</button>
+
   <script src="main.js"></script>
 </body>
 </html>
