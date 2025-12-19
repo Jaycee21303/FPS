@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Galactica Clone</title>
+  <title>Pac-Man Clone</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,41 +12,51 @@
       <div class="hud__left">
         <div class="hud__label">Score</div>
         <div id="score" class="hud__value">000000</div>
+        <div class="hud__label">High</div>
+        <div id="highScore" class="hud__value">000000</div>
       </div>
       <div class="hud__center">
-        <div class="hud__title">GALACTICA</div>
-        <div id="status" class="hud__status">Insert Coin / Press Enter</div>
+        <div class="hud__title">PAC-MAN</div>
+        <div id="status" class="hud__status">Ready!</div>
       </div>
       <div class="hud__right">
         <div class="hud__label">Lives</div>
         <div id="lives" class="hud__value">3</div>
+        <div class="hud__label">Level</div>
+        <div id="level" class="hud__value">1</div>
       </div>
     </header>
 
     <main class="stage">
-      <canvas id="game" width="960" height="720" aria-label="Galactica game canvas"></canvas>
+      <div class="canvas-shell">
+        <canvas id="game" width="672" height="744" aria-label="Pac-Man game canvas"></canvas>
+        <div class="start-screen" id="startScreen" aria-live="polite">
+          <div class="start-screen__content">
+            <h1>Pac-Man Clone</h1>
+            <p>Press Enter or tap Start to play.</p>
+            <button id="startButton" class="start-screen__button">Start</button>
+          </div>
+        </div>
+      </div>
       <div class="legend">
-        <div><span>Move:</span> Arrow keys / A-D</div>
-        <div><span>Fire:</span> Space</div>
+        <div><span>Move:</span> Arrow keys / WASD</div>
         <div><span>Pause:</span> P</div>
       </div>
     </main>
 
+    <section class="touch-controls" aria-label="Touch controls">
+      <button class="touch-button" data-direction="up">▲</button>
+      <div class="touch-row">
+        <button class="touch-button" data-direction="left">◀</button>
+        <button class="touch-button" data-direction="down">▼</button>
+        <button class="touch-button" data-direction="right">▶</button>
+      </div>
+    </section>
+
     <footer class="footer">
-      <p>Built for GitHub Pages. No audio by default; toggle SFX in settings panel.</p>
+      <p>Eat all dots, avoid ghosts, and use power pellets to turn the tables.</p>
     </footer>
   </div>
-
-  <div class="panel" id="settingsPanel" hidden>
-    <h2>Settings</h2>
-    <label><input type="checkbox" id="toggleSfx" checked /> Sound FX</label>
-    <label><input type="checkbox" id="toggleParticles" checked /> Particles</label>
-    <label><input type="checkbox" id="toggleTrails" checked /> Motion Trails</label>
-    <label><input type="checkbox" id="toggleBloom" checked /> Bloom Glow</label>
-    <button id="closeSettings">Close</button>
-  </div>
-
-  <button id="settingsButton" class="settings">⚙</button>
 
   <script src="main.js"></script>
 </body>
