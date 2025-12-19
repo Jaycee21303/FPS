@@ -23,6 +23,7 @@ body {
   background: radial-gradient(circle at top, #1a1f3d, #05060d 55%, #02030a 100%);
   color: var(--text);
   min-height: 100vh;
+  overscroll-behavior: none;
 }
 
 .page {
