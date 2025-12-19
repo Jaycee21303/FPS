@@ -481,6 +481,7 @@
     if (ghost.state === "scatter") {
       return ghost.scatterTarget;
     }
+  }
 
     const pacTile = getTilePos(pacman.x, pacman.y);
     if (ghost.name === "Blinky") {
@@ -525,6 +526,7 @@
           return;
         }
       }
+    });
 
       const ghostSpeed = ghost.state === "frightened" ? ghost.speed * 0.7 : ghost.speed;
       if (isCentered(ghost.x, ghost.y)) {
@@ -542,6 +544,7 @@
 
       applyTunnel(ghost);
     });
+    return best.dir;
   }
 
   function maybeSpawnFruit() {
@@ -554,7 +557,6 @@
       };
       state.fruitTimer = 10;
     }
-  }
 
   function updateFruit(dt) {
     if (!state.fruit) return;
@@ -590,7 +592,6 @@
         nextLevel();
       }
     }
-  }
 
   function eatFruit() {
     if (!state.fruit) return;
@@ -637,6 +638,8 @@
       localStorage.setItem("pacman-highscore", state.highScore);
       updateHud();
     }
+
+    return pacTile;
   }
 
   function updateHighScore() {
