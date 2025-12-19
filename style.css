@@ -1,13 +1,16 @@
 :root {
   color-scheme: dark;
   font-family: "Segoe UI", "Trebuchet MS", sans-serif;
-  --bg: #06070d;
-  --panel: #141728;
-  --accent: #4ce8ff;
-  --accent-soft: rgba(76, 232, 255, 0.2);
-  --text: #e7f3ff;
-  --muted: rgba(231, 243, 255, 0.65);
-  --danger: #ff577f;
+  --bg: #05060d;
+  --panel: #11142a;
+  --accent: #ffd23c;
+  --accent-soft: rgba(255, 210, 60, 0.2);
+  --text: #f5f5f5;
+  --muted: rgba(245, 245, 245, 0.7);
+  --ghost-red: #ff4d4d;
+  --ghost-pink: #ff7cd9;
+  --ghost-cyan: #5ee7ff;
+  --ghost-orange: #ffb347;
 }
 
 * {
@@ -17,15 +20,16 @@
 }
 
 body {
-  background: radial-gradient(circle at top, #121832, #06070d 55%, #02030a 100%);
+  background: radial-gradient(circle at top, #1a1f3d, #05060d 55%, #02030a 100%);
   color: var(--text);
   min-height: 100vh;
+  overscroll-behavior: none;
 }
 
 .page {
   display: grid;
   gap: 16px;
-  padding: 24px;
+  padding: 20px;
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -58,8 +62,8 @@ body {
 }
 
 .hud__title {
-  font-size: 1.5rem;
-  letter-spacing: 0.4em;
+  font-size: 1.6rem;
+  letter-spacing: 0.3em;
   color: var(--accent);
 }
 
@@ -80,14 +84,60 @@ body {
   gap: 16px;
 }
 
+.canvas-shell {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+}
+
 canvas {
   width: 100%;
-  max-width: 960px;
   height: auto;
-  border-radius: 24px;
-  background: radial-gradient(circle at 50% 120%, #0a1333 0%, #04050f 60%, #01030a 100%);
+  border-radius: 18px;
+  background: #000014;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.55);
+  display: block;
+}
+
+.start-screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(1, 1, 8, 0.92);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.start-screen[hidden] {
+  display: none;
+}
+
+.start-screen__content {
+  display: grid;
+  gap: 12px;
+}
+
+.start-screen__content h1 {
+  font-size: 2rem;
+  color: var(--accent);
+}
+
+.start-screen__content p {
+  color: var(--muted);
+}
+
+.start-screen__button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 .legend {
@@ -103,60 +153,36 @@ canvas {
   margin-right: 6px;
 }
 
+.touch-controls {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.touch-row {
+  display: flex;
+  gap: 12px;
+}
+
+.touch-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 1.5rem;
+  backdrop-filter: blur(6px);
+}
+
 .footer {
   text-align: center;
   color: var(--muted);
   font-size: 0.85rem;
 }
 
-.settings {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: var(--accent);
-  color: #02030a;
-  font-size: 1.4rem;
-  cursor: pointer;
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
-}
-
-.panel {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--panel);
-  padding: 24px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: grid;
-  gap: 12px;
-  min-width: 240px;
-  z-index: 10;
-}
-
-.panel label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-}
-
-.panel button {
-  border: none;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: var(--accent);
-  color: #02030a;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-@media (max-width: 720px) {
+@media (max-width: 860px) {
   .hud {
     grid-template-columns: 1fr;
     text-align: center;
@@ -167,8 +193,24 @@ canvas {
     justify-items: center;
   }
 
-  .settings {
-    right: 12px;
-    bottom: 12px;
+  .canvas-shell {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 14px;
+  }
+
+  .touch-controls {
+    display: grid;
+    gap: 10px;
+  }
+
+  .touch-controls::before {
+    content: "Touch controls";
+    color: var(--muted);
+    font-size: 0.8rem;
   }
 }
